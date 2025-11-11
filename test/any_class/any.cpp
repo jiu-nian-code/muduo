@@ -2,35 +2,57 @@
 
 #include<string>
 
+#include<typeinfo>
+
+#include<typeindex>
+
+#include<any>
+
 class Any
 {
-    struct placeholder
+    struct holder
     {
-         virtual ~placeholder(){};
+         virtual ~holder(){}; // 析构函数不能是纯虚函数
+
+         virtual holder* clone() = 0;
+
+         virtual const std::type_info& type() = 0;
     };
 
     template<class T>
-    struct hole : public placeholder
+    struct placeholder : public holder
     {
-        hole(const T& con):
-            _content(con)
-        {
-        }
+        placeholder(const T& con): _content(con) {}
 
-        ~hole()
-        {
-        }
+        placeholder* clone() { return new placeholder<T>(_content); }
+
+        const std::type_info& type() { return typeid(T); }
 
         T _content;
     };
 
-    placeholder* _ph;
+    holder* _ph;
 public:
+    Any(): _ph(nullptr){};
+
     template<class T>
-    Any(const T& everything)
+    Any(const T& everything) { _ph= new placeholder<T>(everything); }
+
+    Any(const Any& other)
     {
-        hole<T>* ptr = new hole<T>(everything);
-        _ph= ptr;
+        if(!other._ph)
+        {
+            std::cerr << "copy error" << std::endl;
+            return;
+        }
+
+        _ph = other._ph->clone();
+    }
+
+    Any& swap(Any &other) 
+    {
+        std::swap(_ph, other._ph);
+        return *this;
     }
 
     template<class T>
@@ -41,23 +63,27 @@ public:
         return *this;
     }
 
-    template<class T>
-    T* Get_Value()
+    Any& operator=(const Any &other)
     {
-        return _ph ? &((hole<T>*)_ph)->_content : nullptr;
+        Any tmp(other);
+        std::swap(_ph, tmp._ph);
+        return *this;
     }
 
-    ~Any()
-    {
-        delete _ph;
-    }
+    template<class T>
+    T* Get_Value(){ return _ph ? &((placeholder<T>*)_ph)->_content : nullptr; }
+
+    ~Any() { delete _ph; }
 };
 
 int main()
 {
-    Any a(1);
-    std::string str("hello world");
-    a = str;
-    std::cout << *a.Get_Value<std::string>() << std::endl;
+    // Any a(1);
+    // Any b(2);
+    // a = b;
+
+    std::any a;
+    a = std::string("hello world");
+    std::cout << std::any_cast<std::string>(a) << std::endl;
     return 0;
 }

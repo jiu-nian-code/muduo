@@ -1,8 +1,8 @@
 .PHONY : ALL
-ALL : buffer
+ALL : main
 
-buffer : buffer.cpp
+main : main.cpp
 	g++ -o $@ $^ -std=c++11
 .PHONY : clean
 clean :
-	rm -f buffer
+	rm -f main

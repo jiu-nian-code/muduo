@@ -97,6 +97,16 @@ class buffer
         return true;
     }
 
+    bool makesure_wirtearea()
+    {
+
+    }
+
+    bool makesure_readarea()
+    {
+
+    }
+
 public:
     buffer():
         _arr(DEFAULT_BUFFER_SIZE),

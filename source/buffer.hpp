@@ -4,12 +4,15 @@
 
 #include<algorithm>
 
+#include<string.h>
+
 #define DEFAULT_BUFFER_SIZE 10
 
 // TODO : 可以使用环形数组实现
 
 class buffer
 {
+    typedef buffer Self;
     std::vector<char> _arr;
     size_t _read_loc;
     size_t _write_loc;
@@ -28,7 +31,7 @@ class buffer
         return true;
     }
 
-    bool directly_wirte(const char* source, size_t sz)
+    bool directly_write(const char* source, size_t sz)
     {
         for(int i = 0; i < sz; ++i)
         {
@@ -97,14 +100,42 @@ class buffer
         return true;
     }
 
-    bool makesure_wirtearea()
+    bool makesure_writearea(size_t sz)
     {
-
+        size_t head = Head();
+        size_t tail = Tail();
+        size_t ewa = effective_write_area();
+        if(tail < sz && ewa >= sz) // 对齐
+        {
+            align();
+        }
+        else // 扩容
+        {
+            expansion(sz);
+        }
+        return true;
     }
 
-    bool makesure_readarea()
+    char* Begin()
     {
+        return &(*(_arr.begin()));
+    }
 
+    char* write_position()
+    {
+        return Begin() + _write_loc;
+    }
+
+    char* read_position()
+    {
+        return Begin() + _read_loc;
+    }
+
+    char* FindCRLF()
+    {
+        // void *memchr(const void *s, int c, size_t n);
+        char* res = (char*)memchr(read_position(), '\n', effective_read_area());
+        return res;
     }
 
 public:
@@ -116,34 +147,51 @@ public:
 
     bool wirte(const char* source, size_t sz)
     {
-        size_t head = Head();
-        size_t tail = Tail();
-        size_t ewa = effective_write_area();
-        // std::cout << "head: " << head << " " << "tail: " << tail << " " << "ewa: " << ewa << std::endl;
-        if(tail >= sz) // 直接写入
-        {
-            directly_wirte(source, sz);
-        }
-        else if(tail < sz && ewa >= sz) // 对齐后写入
-        {
-            align();
-            directly_wirte(source, sz);
-        }
-        else // 扩容后写入
-        {
-            // std::cout << 1 << std::endl;
-            expansion(sz);
-            directly_wirte(source, sz);
-        }
-
-        return true;
+        return makesure_writearea(sz) && directly_write(source, sz);
     }
 
-    bool read(char* destination, size_t sz)
+    bool write_buffer(Self& source) // 不加const
+    {
+        return wirte(source.read_position(), source.Size());
+    }
+
+    bool write_string(std::string& str)
+    {
+        return wirte(str.c_str(), str.size());
+    }
+
+    std::string read_as_string(size_t sz)
+    {
+        std::string str;
+        str.resize(sz);
+        ssize_t ret = read(&(*(str.begin())), sz);
+        if(ret > 0) return str;
+        return std::string();
+    }
+
+    ssize_t read(char* destination, size_t sz)
     {
         // size_t era = effective_read_area();
         sz = std::min(effective_read_area(), sz);
-        return directly_read(destination, sz);
+        if(directly_read(destination, sz)) return sz;
+        return -1;
+    }
+
+    ssize_t GetLine(char* destination)
+    {
+        char* res = FindCRLF();
+        return read(destination, res - read_position() + 1);
+    }
+
+    size_t Size()
+    {
+        return effective_read_area();
+    }
+
+    void Clear()
+    {
+        _read_loc = 0;
+        _write_loc = 0;
     }
 
     void PRINT() // for debug

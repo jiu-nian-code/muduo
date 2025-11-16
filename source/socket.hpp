@@ -1,3 +1,5 @@
+#pragma once
+
 #include<iostream>
 
 #include"log.hpp"
@@ -20,9 +22,7 @@
 
 #include<fcntl.h>
 
-#define NEW_LV 2
-
-#define DEFAULT_PORT 9090
+#define DEFAULT_PORT 9091
 
 std::string default_ip("0.0.0.0");
 
@@ -190,7 +190,10 @@ public:
     // 创建一个监听连接
     bool create_listen_link()
     {
-        return my_socket() && my_bind() && my_listen();
+        my_socket();
+        my_bind();
+        my_listen();
+        return true;
     }
     
     // 创建一个服务端连接
@@ -198,4 +201,6 @@ public:
     {
         return my_socket() && my_connect(ip, port);
     }
+
+    int FD() { return _skfd; }
 };

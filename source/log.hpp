@@ -1,7 +1,9 @@
+#pragma once
+
 #define INF 0
 #define DBG 1
 #define ERR 2
-// #define NEW_LV 0
+#define NEW_LV 0
 
 #define LOG(LV, format, ...)\
     do{\

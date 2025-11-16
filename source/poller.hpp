@@ -1,3 +1,5 @@
+#pragma once
+
 #include"channel.hpp"
 
 #include"log.hpp"
@@ -8,31 +10,96 @@
 
 #include<string.h>
 
+#include<vector>
+
 #define MAX_READYEVENTS 1024
+
+#define DEFAULT_TIMEOUT -1
+
 class Poller
 {
     int _epfd;
     std::unordered_map<int, Channel*> _mp;
     struct epoll_event _revs[MAX_READYEVENTS];
+
+    void Update(Channel* cl, int op)
+    {
+        int fd = cl->FD();
+        struct epoll_event ee;
+        ee.events = cl->EVENTS();
+        ee.data.fd = fd;
+        if(epoll_ctl(_epfd, op, fd, &ee))
+        {
+            ERR_LOG("epoll_ctl: %s", strerror(errno));
+        }
+    }
+
 public:
     Poller()
     {
         _epfd = epoll_create(1);
         if(_epfd < 0)
         {
-            ERR_LOG("epoll_create: %s", strerror(errno));
+            ERR_LOG("epoll_create: epoll_create: %s", strerror(errno));
             return;
         }
     }
 
-    bool Add_Modify_Event(int fd, uint32_t events)
+    void Add_Modify_Event(Channel* cl)
     {
-        struct epoll_event ee;
-        ee.events = events;
-        ee.data.fd = fd;
-        if(_mp.count(fd) == 0) { return epoll_ctl(_epfd, EPOLL_CTL_ADD, fd, &ee) < 0 ? false : true; }
-        else { return epoll_ctl(_epfd, EPOLL_CTL_MOD, fd, &ee) < 0 ? false : true; }
+        int fd = cl->FD();
+        if(_mp.count(fd) == 0)
+        {
+            _mp[fd] = cl;
+            Update(cl, EPOLL_CTL_ADD);
+        }
+        else Update(cl, EPOLL_CTL_MOD);
     }
 
-    bool Del_Event(int fd) { return epoll_ctl(_epfd, EPOLL_CTL_DEL, fd, nullptr) < 0 ? false : true;}
+    void Del_Event(Channel* cl)
+    {
+        int fd = cl->FD();
+        auto it = _mp.find(fd);
+        if(it != _mp.end())
+        {
+            delete it->second;
+            _mp.erase(it);
+        }
+    }
+
+    void Poller_Wait(std::vector<Channel*>& active)
+    {
+        // int epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout);
+        int num = epoll_wait(_epfd, _revs, MAX_READYEVENTS, DEFAULT_TIMEOUT);
+
+        for(int i = 0; i < num; ++i)
+        {
+            auto it = _mp.find(_revs[i].data.fd);
+            if(it == _mp.end())
+            {
+                ERR_LOG("find error");
+                return;
+            }
+            it->second->Set_Revents(_revs[i].events);
+            active.push_back(it->second);
+        }
+    }
+
+    ~Poller()
+    {
+        for(auto& e : _mp)
+            delete e.second;
+    }
 };
+
+//移除监控
+void Channel::Remove()
+{
+    return _pl->Del_Event(this);
+}
+
+//事件处理，一旦连接触发了事件，就调用这个函数，自己触发了什么事件如何处理自己决定
+void Channel::Update()
+{
+    return _pl->Add_Modify_Event(this);
+}

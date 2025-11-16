@@ -6,14 +6,103 @@
 
 #include"channel.hpp"
 
+#include"poller.hpp"
+
 #include<iostream>
 
 #include<time.h>
 
 #include<unistd.h>
 
+#include<functional>
+
+void myclose(Channel* cl)
+{
+    INF_LOG("do close.");
+    cl->Remove();
+}
+
+void myerror(Channel* cl)
+{
+    INF_LOG("do error.");
+    std::cout << "error" << std::endl;
+    myclose(cl);
+}
+
+void myevent(Channel* cl)
+{
+    INF_LOG("do event.");
+    std::cout << cl->FD() << std::endl;
+}
+
+void myread(Channel* cl)
+{
+    INF_LOG("do read.");
+    char buffer[1024] = {0};
+    ssize_t ret = read(cl->FD(), buffer, 1024);
+    if(ret <= 0)
+    {
+        myclose(cl);
+        return;
+    }
+    buffer[ret] = 0;
+    std::cout << buffer << std::endl;
+    cl->Set_Write_Able();
+}
+
+void mywrite(Channel* cl)
+{
+    INF_LOG("do write.");
+    ssize_t ret = write(cl->FD(), "cnm!", 1024);
+    if(ret <= 0)
+    {
+        myclose(cl);
+        return;
+    }
+    cl->Reset_Write_Able();
+}
+
+void Accepter(Channel* cl, Poller* pl)
+{
+    INF_LOG("accept a link.");
+    int fd = cl->FD();
+    int newfd = accept(fd, nullptr, nullptr);
+    Channel* newcl = new Channel(newfd, pl);
+    newcl->Set_Close_Callback(std::bind(myclose, newcl));
+    newcl->Set_Error_Callback(std::bind(myerror, newcl));
+    newcl->Set_Event_Callback(std::bind(myevent, newcl));
+    newcl->Set_Read_Callback(std::bind(myread, newcl));
+    newcl->Set_Write_Callback(std::bind(mywrite, newcl));
+
+    newcl->Set_Read_Able();
+    pl->Add_Modify_Event(newcl);
+}
+
 int main()
 {
+    Socket sk;
+    Poller pl;
+    sk.create_listen_link();
+    sk.reuse_address_port();
+    Channel* cl = new Channel(sk.FD(), &pl);
+    cl->Set_Read_Able();
+    cl->Set_Read_Callback(std::bind(Accepter, cl, &pl));
+    pl.Add_Modify_Event(cl);
+
+    std::vector<Channel *> arr;
+    while(1)
+    {
+        arr.clear();
+        pl.Poller_Wait(arr);
+        for(auto& e : arr)
+        {
+            e->Handle_Event();
+        }
+    }
+
+    return 0;
+}
+
     // int n = 10;
     // while(n--)
     // {
@@ -63,7 +152,3 @@ int main()
     //     arry[ret] = 0;
     //     std::cout << arry << "***" << std::endl;
     // }
-
-    Channel cl(1, nullptr);
-    return 0;
-}

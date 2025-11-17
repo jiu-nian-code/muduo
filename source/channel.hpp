@@ -6,14 +6,14 @@
 
 #include <sys/epoll.h>
 
-class Poller;
+class Eventloop;
 
 class Channel
 {
     int _fd;
     uint32_t _events; // 监控的事件
     uint32_t _revents; // 当前触发的事件
-    Poller* _pl;
+    Eventloop* _el;
     using Event_Callback = std::function<void()>;
     Event_Callback _read_callback;
     Event_Callback _write_callback;
@@ -21,7 +21,7 @@ class Channel
     Event_Callback _close_callback;
     Event_Callback _event_callback;
 public:
-    Channel(int fd, Poller* el) : _fd(fd), _pl(el)
+    Channel(int fd, Eventloop* el) : _fd(fd), _el(el)
     {}
 
     int FD() { return _fd; }

@@ -92,14 +92,14 @@ public:
     }
 };
 
-//移除监控
-void Channel::Remove()
-{
-    return _pl->Del_Event(this);
-}
+// //移除监控
+// void Channel::Remove()
+// {
+//     return _pl->Del_Event(this);
+// }
 
-//事件处理，一旦连接触发了事件，就调用这个函数，自己触发了什么事件如何处理自己决定
-void Channel::Update()
-{
-    return _pl->Add_Modify_Event(this);
-}
+// //事件处理，一旦连接触发了事件，就调用这个函数，自己触发了什么事件如何处理自己决定
+// void Channel::Update()
+// {
+//     return _pl->Add_Modify_Event(this);
+// }

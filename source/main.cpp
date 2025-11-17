@@ -8,6 +8,8 @@
 
 #include"poller.hpp"
 
+#include"eventloop.hpp"
+
 #include<iostream>
 
 #include<time.h>
@@ -62,12 +64,12 @@ void mywrite(Channel* cl)
     cl->Reset_Write_Able();
 }
 
-void Accepter(Channel* cl, Poller* pl)
+void Accepter(Channel* cl, Eventloop* el)
 {
     INF_LOG("accept a link.");
     int fd = cl->FD();
     int newfd = accept(fd, nullptr, nullptr);
-    Channel* newcl = new Channel(newfd, pl);
+    Channel* newcl = new Channel(newfd, el);
     newcl->Set_Close_Callback(std::bind(myclose, newcl));
     newcl->Set_Error_Callback(std::bind(myerror, newcl));
     newcl->Set_Event_Callback(std::bind(myevent, newcl));
@@ -75,30 +77,19 @@ void Accepter(Channel* cl, Poller* pl)
     newcl->Set_Write_Callback(std::bind(mywrite, newcl));
 
     newcl->Set_Read_Able();
-    pl->Add_Modify_Event(newcl);
 }
 
 int main()
 {
     Socket sk;
-    Poller pl;
+    Eventloop el;
     sk.create_listen_link();
     sk.reuse_address_port();
-    Channel* cl = new Channel(sk.FD(), &pl);
+    Channel* cl = new Channel(sk.FD(), &el);
+    cl->Set_Read_Callback(std::bind(Accepter, cl, &el));
     cl->Set_Read_Able();
-    cl->Set_Read_Callback(std::bind(Accepter, cl, &pl));
-    pl.Add_Modify_Event(cl);
 
-    std::vector<Channel *> arr;
-    while(1)
-    {
-        arr.clear();
-        pl.Poller_Wait(arr);
-        for(auto& e : arr)
-        {
-            e->Handle_Event();
-        }
-    }
+    el.Start();
 
     return 0;
 }

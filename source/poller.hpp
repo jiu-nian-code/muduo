@@ -62,8 +62,9 @@ public:
         auto it = _mp.find(fd);
         if(it != _mp.end())
         {
-            delete it->second;
+            // delete it->second; // 不应该由poller管理Channel的生命周期
             _mp.erase(it);
+            Update(cl, EPOLL_CTL_DEL);
         }
     }
 
@@ -79,7 +80,7 @@ public:
             {
                 ERR_LOG("find error");
                 return;
-            }
+            }       
             it->second->Set_Revents(_revs[i].events);
             active.push_back(it->second);
         }

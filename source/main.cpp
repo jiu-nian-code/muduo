@@ -22,6 +22,7 @@ void myclose(Channel* cl)
 {
     INF_LOG("do close.");
     cl->Remove();
+    // delete cl; 暂时不能删
 }
 
 void myerror(Channel* cl)
@@ -31,10 +32,10 @@ void myerror(Channel* cl)
     myclose(cl);
 }
 
-void myevent(Channel* cl)
+void myevent()
 {
     INF_LOG("do event.");
-    std::cout << cl->FD() << std::endl;
+    // std::cout << cl->FD() << std::endl;
 }
 
 void myread(Channel* cl)
@@ -72,7 +73,7 @@ void Accepter(Channel* cl, Eventloop* el)
     Channel* newcl = new Channel(newfd, el);
     newcl->Set_Close_Callback(std::bind(myclose, newcl));
     newcl->Set_Error_Callback(std::bind(myerror, newcl));
-    newcl->Set_Event_Callback(std::bind(myevent, newcl));
+    newcl->Set_Event_Callback(std::bind(myevent));
     newcl->Set_Read_Callback(std::bind(myread, newcl));
     newcl->Set_Write_Callback(std::bind(mywrite, newcl));
 

@@ -67,8 +67,7 @@ public:
             if(_read_callback) _read_callback();
             if(_event_callback) _event_callback();
         }
-            
-        if(_revents & EPOLLOUT)
+        else if(_revents & EPOLLOUT)
         {
             if(_write_callback) _write_callback();
             if(_event_callback) _event_callback();

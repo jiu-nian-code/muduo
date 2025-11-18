@@ -18,6 +18,10 @@
 
 #include"channel.hpp"
 
+#include"timewheel.hpp"
+
+class TimerWheel;
+
 class Eventloop
 {
     using functor = std::function<void()>;
@@ -25,9 +29,10 @@ class Eventloop
     Poller _pl;
     std::vector<functor> _tasks;
     int _eventfd;
-    // std::unique_ptr<Channel> _event_channel_ptr;
-    Channel* _event_channel_ptr;
+    std::unique_ptr<Channel> _event_channel_ptr;
+    // Channel* _event_channel_ptr;
     std::mutex _mt;
+    TimerWheel _tw;
 
     void Run_All_Task()
     {
@@ -78,22 +83,26 @@ public:
     Eventloop():
         thread_id(std::this_thread::get_id()),
         _eventfd(Create_Eventfd()),
-        _event_channel_ptr(new Channel(_eventfd, this))
+        _event_channel_ptr(new Channel(_eventfd, this)),
+        _tw(this, 1)
+
     {
         _event_channel_ptr->Set_Read_Callback(std::bind(&Eventloop::Read_Eventfd, this));
         _event_channel_ptr->Set_Read_Able();
     }
-
-
+    
     void Start() // 三板斧
     {
-        std::vector<Channel *> arr;
-        _pl.Poller_Wait(arr);
-
-        for(auto& e : arr)
-            e->Handle_Event();
-
-        Run_All_Task();
+        while(1)
+        {
+            std::vector<Channel *> arr;
+            _pl.Poller_Wait(arr);
+    
+            for(auto& e : arr)
+                e->Handle_Event();
+    
+            Run_All_Task();
+        }
     }
 
     bool IsInloop() // 判断当前想要执行任务的线程是不是当前的线程
@@ -110,6 +119,12 @@ public:
         Weakup_Eventfd();
     }
 
+    void Runinloop(const functor& fc)
+    {
+        if(IsInloop()) fc();
+        else QueueInLoop(fc);
+    }
+
     void EL_Del_Event(Channel *cl)
     {
         return _pl.Del_Event(cl);
@@ -118,6 +133,26 @@ public:
     void EL_Update(Channel *cl)
     {
         return _pl.Add_Modify_Event(cl);
+    }
+
+    void TimerAdd(uint64_t timer_no, int timeout, TimerCallback tc)
+    {
+        return _tw.AddTimer(timer_no, timeout, tc);
+    }
+
+    void TimerRefresh(uint64_t timer_no)
+    {
+        return _tw.RefreshTimer(timer_no);
+    }
+
+    void TimerCancel(uint64_t timer_no)
+    {
+        return _tw.CancelTimer(timer_no);
+    }
+
+    bool HasTimer(uint64_t timer_no)
+    {
+        return _tw.HasTimer(timer_no);
     }
 };
 
@@ -131,4 +166,20 @@ void Channel::Remove()
 void Channel::Update()
 {
     return _el->EL_Update(this);
+}
+
+void TimerWheel::AddTimer(uint64_t timer_no, int timeout, TimerCallback tc)
+{
+    // void AddTimerInLoop(uint64_t timer_no, int timeout, TimerCallback tc)
+    _el->Runinloop(std::bind(&TimerWheel::AddTimerInLoop, this, timer_no, timeout, tc));
+}
+
+void TimerWheel::RefreshTimer(uint64_t timer_no)
+{
+    _el->Runinloop(std::bind(&TimerWheel::RefreshTimerInLoop, this, timer_no));
+}
+
+void TimerWheel::CancelTimer(uint64_t timer_no)
+{
+    _el->Runinloop(std::bind(&TimerWheel::CancelTimerInLoop, this, timer_no));
 }

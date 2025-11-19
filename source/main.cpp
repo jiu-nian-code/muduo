@@ -32,9 +32,10 @@ void myerror(Channel* cl)
     myclose(cl);
 }
 
-void myevent()
+void myevent(Channel* cl, Eventloop* el, uint64_t timer_no)
 {
     INF_LOG("do event.");
+    el->TimerRefresh(timer_no);
     // std::cout << cl->FD() << std::endl;
 }
 
@@ -71,13 +72,15 @@ void Accepter(Channel* cl, Eventloop* el)
     int fd = cl->FD();
     int newfd = accept(fd, nullptr, nullptr);
     Channel* newcl = new Channel(newfd, el);
+    uint64_t timer_no = 66;
     newcl->Set_Close_Callback(std::bind(myclose, newcl));
     newcl->Set_Error_Callback(std::bind(myerror, newcl));
-    newcl->Set_Event_Callback(std::bind(myevent));
+    newcl->Set_Event_Callback(std::bind(myevent, newcl, el, timer_no));
     newcl->Set_Read_Callback(std::bind(myread, newcl));
     newcl->Set_Write_Callback(std::bind(mywrite, newcl));
 
     newcl->Set_Read_Able();
+    el->TimerAdd(timer_no, 5, std::bind(myclose, newcl));
 }
 
 int main()

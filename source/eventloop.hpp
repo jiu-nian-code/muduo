@@ -171,15 +171,15 @@ void Channel::Update()
 void TimerWheel::AddTimer(uint64_t timer_no, int timeout, TimerCallback tc)
 {
     // void AddTimerInLoop(uint64_t timer_no, int timeout, TimerCallback tc)
-    _el->Runinloop(std::bind(&TimerWheel::AddTimerInLoop, this, timer_no, timeout, tc));
+    return _el->Runinloop(std::bind(&TimerWheel::AddTimerInLoop, this, timer_no, timeout, tc));
 }
 
 void TimerWheel::RefreshTimer(uint64_t timer_no)
 {
-    _el->Runinloop(std::bind(&TimerWheel::RefreshTimerInLoop, this, timer_no));
+    return _el->Runinloop(std::bind(&TimerWheel::RefreshTimerInLoop, this, timer_no));
 }
 
 void TimerWheel::CancelTimer(uint64_t timer_no)
 {
-    _el->Runinloop(std::bind(&TimerWheel::CancelTimerInLoop, this, timer_no));
+    return _el->Runinloop(std::bind(&TimerWheel::CancelTimerInLoop, this, timer_no));
 }

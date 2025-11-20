@@ -12,9 +12,9 @@
 
 // TODO : 可以使用环形数组实现
 
-class buffer
+class Buffer
 {
-    typedef buffer Self;
+    typedef Buffer Self;
     std::vector<char> _arr;
     size_t _read_loc;
     size_t _write_loc;
@@ -141,7 +141,7 @@ class buffer
     }
 
 public:
-    buffer():
+    Buffer():
         _arr(DEFAULT_BUFFER_SIZE),
         _read_loc(0),
         _write_loc(0)

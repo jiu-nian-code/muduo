@@ -10,6 +10,8 @@
 
 #include"eventloop.hpp"
 
+#include"connection.hpp"
+
 #include<iostream>
 
 #include<time.h>
@@ -18,61 +20,62 @@
 
 #include<functional>
 
-void myclose(Channel* cl)
-{
-    INF_LOG("do close.");
-    cl->Remove();
-    // delete cl; 暂时不能删
-}
+// void myclose(Channel* cl)
+// {
+//     INF_LOG("do close.");
+//     cl->Remove();
+//     // delete cl; 暂时不能删
+// }
 
-void myerror(Channel* cl)
-{
-    INF_LOG("do error.");
-    std::cout << "error" << std::endl;
-    myclose(cl);
-}
+// void myerror(Channel* cl)
+// {
+//     INF_LOG("do error.");
+//     std::cout << "error" << std::endl;
+//     myclose(cl);
+// }
 
-void myevent(Channel* cl, Eventloop* el, uint64_t timer_no)
-{
-    INF_LOG("do event.");
-    el->TimerRefresh(timer_no);
-    // std::cout << cl->FD() << std::endl;
-}
+// void myevent(Channel* cl, Eventloop* el, uint64_t timer_no)
+// {
+//     INF_LOG("do event.");
+//     el->TimerRefresh(timer_no);
+//     // std::cout << cl->FD() << std::endl;
+// }
 
-void myread(Channel* cl)
-{
-    INF_LOG("do read.");
-    char buffer[1024] = {0};
-    ssize_t ret = read(cl->FD(), buffer, 1024);
-    if(ret <= 0)
-    {
-        myclose(cl);
-        return;
-    }
-    buffer[ret] = 0;
-    std::cout << buffer << std::endl;
-    cl->Set_Write_Able();
-}
+// void myread(Channel* cl)
+// {
+//     INF_LOG("do read.");
+//     char buffer[1024] = {0};
+//     ssize_t ret = read(cl->FD(), buffer, 1024);
+//     if(ret <= 0)
+//     {
+//         myclose(cl);
+//         return;
+//     }
+//     buffer[ret] = 0;
+//     std::cout << buffer << std::endl;
+//     cl->Set_Write_Able();
+// }
 
-void mywrite(Channel* cl)
-{
-    INF_LOG("do write.");
-    ssize_t ret = write(cl->FD(), "cnm!", 1024);
-    if(ret <= 0)
-    {
-        myclose(cl);
-        return;
-    }
-    cl->Reset_Write_Able();
-}
+// void mywrite(Channel* cl)
+// {
+//     INF_LOG("do write.");
+//     ssize_t ret = write(cl->FD(), "cnm!", 1024);
+//     if(ret <= 0)
+//     {
+//         myclose(cl);
+//         return;
+//     }
+//     cl->Reset_Write_Able();
+// }
 
 void Accepter(Channel* cl, Eventloop* el)
 {
     INF_LOG("accept a link.");
     int fd = cl->FD();
     int newfd = accept(fd, nullptr, nullptr);
-    Channel* newcl = new Channel(newfd, el);
+    
     uint64_t timer_no = 66;
+    Connection ct();
     newcl->Set_Close_Callback(std::bind(myclose, newcl));
     newcl->Set_Error_Callback(std::bind(myerror, newcl));
     newcl->Set_Event_Callback(std::bind(myevent, newcl, el, timer_no));
@@ -94,6 +97,8 @@ int main()
     cl->Set_Read_Able();
 
     el.Start();
+
+    delete cl;
 
     return 0;
 }

@@ -8,6 +8,8 @@
 
 #include<string.h>
 
+#include"log.hpp"
+
 #define DEFAULT_BUFFER_SIZE 10
 
 // TODO : 可以使用环形数组实现
@@ -82,16 +84,6 @@ class Buffer
         return _arr.size() - _write_loc;
     }
 
-    size_t effective_write_area()
-    {
-        return Head() + Tail();
-    }
-
-    size_t effective_read_area()
-    {
-        return _write_loc - _read_loc;
-    }
-
     bool directly_read(char* destination, size_t sz)
     {
         for(int i = 0; i < sz; ++i, ++_read_loc)
@@ -123,16 +115,6 @@ class Buffer
         return &(*(_arr.begin()));
     }
 
-    char* write_position()
-    {
-        return Begin() + _write_loc;
-    }
-
-    char* read_position()
-    {
-        return Begin() + _read_loc;
-    }
-
     char* FindCRLF()
     {
         // void *memchr(const void *s, int c, size_t n);
@@ -146,6 +128,26 @@ public:
         _read_loc(0),
         _write_loc(0)
     {}
+
+    size_t effective_write_area()
+    {
+        return Head() + Tail();
+    }
+
+    size_t effective_read_area()
+    {
+        return _write_loc - _read_loc;
+    }
+
+    char* write_position()
+    {
+        return Begin() + _write_loc;
+    }
+
+    char* read_position()
+    {
+        return Begin() + _read_loc;
+    }
 
     bool wirte(const char* source, size_t sz)
     {
@@ -178,6 +180,16 @@ public:
         if(directly_read(destination, sz)) return sz;
         return -1;
     }
+
+    void Move_Read_Loc(size_t len) // danger
+    {
+        if(len < effective_read_area())
+        {
+            ERR_LOG("move error, len is longer than effective_read_area");
+        }
+        _read_loc += len;
+    }
+
 
     ssize_t GetLine(char* destination)
     {

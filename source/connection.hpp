@@ -27,6 +27,8 @@ typedef enum
 } Con_Sta;
 
 // class Eventloop;
+class Connection;
+using connect_ptr = std::shared_ptr<Connection>;
 
 class Connection : public std::enable_shared_from_this<Connection>
 {
@@ -35,7 +37,7 @@ class Connection : public std::enable_shared_from_this<Connection>
     Socket _sk; // 套接字类，管理上面的套接字
     // uint64_t timer_no; // 定时器任务id
 
-    bool _enable_inactive_destruction;
+    bool _enable_inactive_destruction = false;
     Con_Sta _cs;
     Eventloop* _el;
     Channel _cl;
@@ -43,7 +45,6 @@ class Connection : public std::enable_shared_from_this<Connection>
     Buffer _outbuf;
     Any _context;
 
-    using connect_ptr = std::shared_ptr<Connection>;
     using connected_callback = std::function<void(const connect_ptr&)>;
     using message_callback = std::function<void(const connect_ptr&, Buffer*)>;
     using closed_callback = std::function<void(const connect_ptr&)>;
@@ -60,8 +61,9 @@ class Connection : public std::enable_shared_from_this<Connection>
     {
         char tmp[65536] = {0};
         ssize_t ret = _sk.Recv_NoBlock(tmp, 65535);
-        if(ret < 0)
+        if(ret <= 0)
         {
+            std::cout << strerror(errno) << std::endl;
             Shutdown();
             return;
         }
@@ -77,7 +79,9 @@ class Connection : public std::enable_shared_from_this<Connection>
         {
             if(_inbuf.effective_read_area() > 0 && _message_callback) 
                 _message_callback(shared_from_this(), &_inbuf);
+            return Release();
         }
+        _outbuf.Move_Read_Loc(ret);
 
         if(_outbuf.effective_read_area() == 0)
         {
@@ -90,7 +94,7 @@ class Connection : public std::enable_shared_from_this<Connection>
     {
         if(_inbuf.effective_read_area() > 0 && _message_callback) 
             _message_callback(shared_from_this(), &_inbuf);
-        Release_In_Loop();
+        Release();
     }
 
     void Handle_Error()
@@ -106,7 +110,11 @@ class Connection : public std::enable_shared_from_this<Connection>
 
     void Send_In_Loop(Buffer& buf) // 
     {
-        if(_cs == CANCELCONNECTED) return;
+        if(_cs == CANCELCONNECTED)
+        {
+            ERR_LOG("connect is cancel.");
+            return;
+        }
         _outbuf.write_buffer(buf);
         if(!_cl.Write_Able()) _cl.Set_Write_Able();
     }
@@ -118,15 +126,16 @@ class Connection : public std::enable_shared_from_this<Connection>
             _message_callback(shared_from_this(), &_inbuf);
         if(_outbuf.effective_read_area() > 0 && !_cl.Write_Able())
             _cl.Set_Write_Able();
-        if(_outbuf.effective_read_area() == 0) Release();
+        if(_outbuf.effective_read_area() == 0) Release_In_Loop();
     }
 
     void Release_In_Loop()
     {
         _cs = CANCELCONNECTED;
-        if(_el->HasTimer(_con_id)) _el->TimerCancel(_con_id);
+            
         // _sk.~Socket();
         _el->EL_Del_Event(&_cl);
+        if(_el->HasTimer(_con_id)) Cancel_Inactive_Destruction_In_Loop();
         if(_closed_callback) _closed_callback(shared_from_this());
         if(_server_closed_callback) _server_closed_callback(shared_from_this());
     }
@@ -149,38 +158,73 @@ class Connection : public std::enable_shared_from_this<Connection>
         if(_cs != CONNECTING) 
         {
             ERR_LOG("Stablish error, connect has not start!");
+            return;
         }
         _cs = CONNECTED;
         _cl.Set_Read_Able();
         if(_connected_callback) _connected_callback(shared_from_this());
     }
+
+    void UpGrade_In_Loop(const Any& ay, 
+            const connected_callback& con_c, 
+            const message_callback& mess_c, 
+            const closed_callback& clo_c,
+            const anyevent_callback& any_c)
+    {
+        _context = ay;
+        _connected_callback = con_c;
+        _message_callback = mess_c;
+        _closed_callback = clo_c;
+        _anyevent_callback = any_c;
+    }
+
 public:
     Connection(uint64_t con_id, int skfd, Eventloop* el):
         _con_id(con_id),
         _skfd(skfd),
         _sk(_skfd),
         _el(el),
-        _cl(skfd, _el),
+        _cl(_skfd, _el),
         _cs(CONNECTING)
     {
-        _cl.Set_Read_Callback();
-        _cl.Set_Write_Callback();
-        _cl.Set_Close_Callback();
-        _cl.Set_Error_Callback();
-        _cl.Set_Event_Callback();
+        _cl.Set_Read_Callback(std::bind(&Connection::Handle_Read, this));
+        _cl.Set_Write_Callback(std::bind(&Connection::Handle_Write, this));
+        _cl.Set_Close_Callback(std::bind(&Connection::Handle_Close, this));
+        _cl.Set_Error_Callback(std::bind(&Connection::Handle_Error, this));
+        _cl.Set_Event_Callback(std::bind(&Connection::Handle_Event, this));
     }
+
+    uint64_t ID() { return _con_id; }
+
+    int FD() { return _skfd; }
+
+    bool IsConnected() { return _cs == CONNECTED; }
+
+    void SetContext(const Any &context) { _context = context; }
+
+    Any *GetContext() { return &_context; }
+
+    void Set_Connected_Callback(const connected_callback& cb) { _connected_callback = cb; }
+
+    void Set_Message_Callback(const message_callback& cb) { _message_callback = cb; }
+
+    void Set_Closed_Callback(const closed_callback& cb) { _closed_callback = cb; }
+
+    void Set_Anyevent_Callback(const anyevent_callback& cb) { _anyevent_callback = cb; }
+
+    void Set_Server_Closed_Callback(const closed_callback& cb) {_server_closed_callback = cb; }
 
     void Stablish()
     {
-        _el->Runinloop(std::bind(Connection::Stablish_In_Loop, this));
+        _el->Runinloop(std::bind(&Connection::Stablish_In_Loop, this));
     }
 
     void Send(const char* buf, size_t sz)
     {
         Buffer tmp;
         tmp.wirte(buf, sz);
-        _el->Runinloop(std::bind(&Connection::Send_In_Loop, this, tmp));
-    }
+        _el->Runinloop(std::bind(&Connection::Send_In_Loop, this, std::move(tmp)));
+    }   
 
     void Shutdown()
     {
@@ -192,13 +236,32 @@ public:
         _el->Runinloop(std::bind(&Connection::Release_In_Loop, this));
     }
 
+    void UpGrade(const Any& ay, 
+        const connected_callback& con_c, 
+        const message_callback& mess_c, 
+        const closed_callback& clo_c,
+        const anyevent_callback& any_c)
+    {
+        if(!_el->IsInloop())
+        {
+            ERR_LOG("not in eventloop thread.");
+            return;
+        }
+        _el->Runinloop(std::bind(&Connection::UpGrade_In_Loop, this, ay, con_c, mess_c, clo_c, any_c));
+    }
+
     void Start_Inactive_Destruction(int timeout)
     {
-        _el->Runinloop(std::bind(Connection::Start_Inactive_Destruction_In_Loop, this, timeout));
+        _el->Runinloop(std::bind(&Connection::Start_Inactive_Destruction_In_Loop, this, timeout));
     }
 
     void Cancel_Inactive_Destruction()
     {
-        _el->Runinloop(std::bind(Connection::Cancel_Inactive_Destruction_In_Loop, this));
+        _el->Runinloop(std::bind(&Connection::Cancel_Inactive_Destruction_In_Loop, this));
+    }
+
+    ~Connection()
+    {
+        DBG_LOG("release connection: %p", this);
     }
 };

@@ -65,12 +65,11 @@ public:
         if((_revents & EPOLLIN) || (_revents & EPOLLRDHUP) || (_revents & EPOLLPRI))
         {
             if(_read_callback) _read_callback();
-            if(_event_callback) _event_callback();
         }
-        else if(_revents & EPOLLOUT)
+        
+        if(_revents & EPOLLOUT)
         {
             if(_write_callback) _write_callback();
-            if(_event_callback) _event_callback();
         }
         else if(_revents & EPOLLERR)
         {
@@ -80,6 +79,8 @@ public:
         {
             if(_close_callback) _close_callback();
         }
+
+        if(_event_callback) _event_callback(); // todo
     }
 
     ~Channel()

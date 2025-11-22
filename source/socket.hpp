@@ -216,10 +216,10 @@ public:
     }
 
     // 创建一个监听连接
-    bool create_listen_link()
+    bool create_listen_link(const std::string& ip = default_ip, int16_t port = DEFAULT_PORT)
     {
         my_socket();
-        my_bind();
+        my_bind(ip, port);
         my_listen();
         return true;
     }

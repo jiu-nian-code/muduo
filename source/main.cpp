@@ -12,6 +12,8 @@
 
 #include"connection.hpp"
 
+#include"accept.hpp"
+
 #include<iostream>
 
 #include<time.h>
@@ -19,6 +21,8 @@
 #include<unistd.h>
 
 #include<functional>
+
+#include<unordered_map>
 
 // void myclose(Channel* cl)
 // {
@@ -68,37 +72,56 @@
 //     cl->Reset_Write_Able();
 // }
 
-void Accepter(Channel* cl, Eventloop* el)
+std::unordered_map<uint64_t, connect_ptr> arr;
+
+void Connect(const connect_ptr& con_ptr)
+{
+    std::cout << "get a new link" << std::endl;
+}
+
+void message(const connect_ptr& con_ptr, Buffer* bf)
+{
+    char tmpbuf[65536];
+    ssize_t ret = bf->read(tmpbuf, 65535);
+    std::cout << tmpbuf << std::endl;
+    con_ptr->Send(tmpbuf, ret);
+}
+
+void Close(const connect_ptr& con_ptr)
+{
+    arr.erase(con_ptr->ID());
+    std::cout << "close" << std::endl;
+}
+
+void Event(const connect_ptr& con_ptr)
+{
+    std::cout << "event" << std::endl;
+}
+
+uint64_t timer_no = 0;
+
+void newconnection(Eventloop* el, int fd)
 {
     INF_LOG("accept a link.");
-    int fd = cl->FD();
-    int newfd = accept(fd, nullptr, nullptr);
-    
-    uint64_t timer_no = 66;
-    Connection ct();
-    newcl->Set_Close_Callback(std::bind(myclose, newcl));
-    newcl->Set_Error_Callback(std::bind(myerror, newcl));
-    newcl->Set_Event_Callback(std::bind(myevent, newcl, el, timer_no));
-    newcl->Set_Read_Callback(std::bind(myread, newcl));
-    newcl->Set_Write_Callback(std::bind(mywrite, newcl));
 
-    newcl->Set_Read_Able();
-    el->TimerAdd(timer_no, 5, std::bind(myclose, newcl));
+    connect_ptr con(new Connection(timer_no++, fd, el));
+    con->Set_Connected_Callback(Connect);
+    con->Set_Message_Callback(message);
+    con->Set_Server_Closed_Callback(Close);
+    con->Set_Anyevent_Callback(Event);
+    con->Start_Inactive_Destruction(10);
+    con->Stablish();
+    arr.insert(make_pair(timer_no, con));
 }
 
 int main()
 {
-    Socket sk;
     Eventloop el;
-    sk.create_listen_link();
-    sk.reuse_address_port();
-    Channel* cl = new Channel(sk.FD(), &el);
-    cl->Set_Read_Callback(std::bind(Accepter, cl, &el));
-    cl->Set_Read_Able();
-
+    Accept _ap(&el);
+    _ap.Set_Accept_Callback(std::bind(&newconnection, &el, std::placeholders::_1));
+    _ap.Start_Listen();
+    std::cout << 1 << std::endl;
     el.Start();
-
-    delete cl;
 
     return 0;
 }

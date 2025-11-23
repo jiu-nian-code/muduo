@@ -4,6 +4,7 @@ int main()
 {
     Socket sk;
     sk.create_client_link("127.0.0.1", 9091);
+    sk.reuse_address_port();
     char buf[1024] = {0};
     while(1)
     {

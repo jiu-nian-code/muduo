@@ -2,7 +2,7 @@
 ALL : main client
 
 main : main.cpp
-	g++ -o $@ $^ -std=c++11 -g
+	g++ -o $@ $^ -std=c++11 -g -pthread
 client : client.cpp
 	g++ -o $@ $^ -std=c++11
 .PHONY : clean

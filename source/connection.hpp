@@ -63,11 +63,12 @@ class Connection : public std::enable_shared_from_this<Connection>
         ssize_t ret = _sk.Recv_NoBlock(tmp, 65535);
         if(ret <= 0)
         {
-            std::cout << strerror(errno) << std::endl;
+            // std::cout << strerror(errno) << std::endl;
             Shutdown();
             return;
         }
         _inbuf.wirte(tmp, ret);
+        std::cout << "引用次数: " << shared_from_this().use_count() << std::endl;
         if(_inbuf.effective_read_area() > 0 && _message_callback) 
             _message_callback(shared_from_this(), &_inbuf);
     }
@@ -108,7 +109,7 @@ class Connection : public std::enable_shared_from_this<Connection>
         if(_anyevent_callback) _anyevent_callback(shared_from_this());
     }
 
-    void Send_In_Loop(Buffer& buf) // 
+    void Send_In_Loop(Buffer& buf)
     {
         if(_cs == CANCELCONNECTED)
         {
@@ -138,6 +139,13 @@ class Connection : public std::enable_shared_from_this<Connection>
         if(_el->HasTimer(_con_id)) Cancel_Inactive_Destruction_In_Loop();
         if(_closed_callback) _closed_callback(shared_from_this());
         if(_server_closed_callback) _server_closed_callback(shared_from_this());
+        std::cout << 1 << std::endl;
+        _connected_callback = nullptr;
+        _message_callback = nullptr;
+        _closed_callback = nullptr;
+        _anyevent_callback = nullptr;
+    
+        _server_closed_callback = nullptr;
     }
 
     void Start_Inactive_Destruction_In_Loop(int timeout)

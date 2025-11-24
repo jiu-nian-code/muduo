@@ -80,7 +80,7 @@ public:
             {
                 ERR_LOG("find error");
                 return;
-            }       
+            }
             it->second->Set_Revents(_revs[i].events);
             active.push_back(it->second);
         }

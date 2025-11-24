@@ -74,7 +74,7 @@ int main()
 {
     Eventloop mel;
     tlp = new ThreadloopPool(&mel);
-    tlp->Set_Thread_Num(2);
+    tlp->Set_Thread_Num(0);
     // std::cout << 1 << std::endl;
     tlp->Init();
     // std::cout << 1 << std::endl;

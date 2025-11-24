@@ -49,6 +49,7 @@
         "mutex": "cpp",
         "condition_variable": "cpp",
         "any": "cpp",
-        "typeindex": "cpp"
+        "typeindex": "cpp",
+        "cstring": "cpp"
     }
 }

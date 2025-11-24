@@ -11,8 +11,8 @@ int main()
         std::string str;
         getline(std::cin, str);
         if(str == "quit") break;
-        sk.Send_Block((void*)str.c_str(), str.size());
-        ssize_t ret = sk.Recv_Block(buf, 1024);
+        sk.Send((void*)str.c_str(), str.size());
+        ssize_t ret = sk.Recv(buf, 1024);
         buf[ret] = 0;
         std::cout << buf << std::endl;
     }

@@ -119,10 +119,10 @@ public:
     }
 
     // 发送数据
-    ssize_t Send_Block(void* buf, size_t len)
+    ssize_t Send(void* buf, size_t len, int flags = 0)
     {
         // ssize_t send(int sockfd, const void *buf, size_t len, int flags);
-        ssize_t ret = send(_skfd, buf, len, 0);
+        ssize_t ret = send(_skfd, buf, len, flags);
         if(ret < 0)
         {
             // EINTR 表示当前的socket的阻塞等待被信号打断了
@@ -136,28 +136,19 @@ public:
 
     ssize_t Send_NoBlock(void* buf, size_t len)
     {
-        // ssize_t send(int sockfd, const void *buf, size_t len, int flags);
-        ssize_t ret = send(_skfd, buf, len, MSG_DONTWAIT);
-        if(ret < 0)
-        {
-            // EINTR 表示当前的socket的阻塞等待被信号打断了
-            // EAGAIN 表示当前socket的接收缓冲区没有数据了，非阻塞返回会有这个情况
-            if(errno == EINTR || errno == EAGAIN) return 0;
-            ERR_LOG("send: %s", strerror(errno));
-        }
-        INF_LOG("send successful.");
-        return ret;
+        return Send(buf, len, MSG_DONTWAIT);
     }
 
     // 接收数据
-    ssize_t Recv_Block(void* buf, size_t len)
+    ssize_t Recv(void* buf, size_t len, int flags = 0)
     {
         // ssize_t recv(int sockfd, void *buf, size_t len, int flags);
         ssize_t ret = recv(_skfd, buf, len, 0);
-        if(ret < 0)
+        if(ret <= 0)
         {
             if(errno == EINTR || errno == EAGAIN) return 0;
             ERR_LOG("recv: %s", strerror(errno));
+            return -1;
         }
         INF_LOG("recv successful.");
         return ret;
@@ -165,15 +156,7 @@ public:
 
     ssize_t Recv_NoBlock(void* buf, size_t len)
     {
-        // ssize_t recv(int sockfd, void *buf, size_t len, int flags);
-        ssize_t ret = recv(_skfd, buf, len, MSG_DONTWAIT);
-        if(ret < 0)
-        {
-            if(errno == EINTR || errno == EAGAIN) return 0;
-            ERR_LOG("recv: %s", strerror(errno));
-        }
-        INF_LOG("recv successful.");
-        return ret;
+        return Recv(buf, len, MSG_DONTWAIT);
     }
 
     // 关闭套接字

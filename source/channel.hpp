@@ -38,9 +38,9 @@ public:
 
     void Set_Event_Callback(const Event_Callback& cb) { _event_callback = cb; }
 
-    bool Read_Able() {return (_events & EPOLLIN) ? true : false;}
+    bool Read_Able() { return (_events & EPOLLIN); }
 
-    bool Write_Able() {return (_events & EPOLLOUT) ? true : false;}
+    bool Write_Able() { return (_events & EPOLLOUT); }
 
     void Set_Read_Able() { _events |= EPOLLIN; Update();}
 
@@ -62,15 +62,15 @@ public:
 
     void Handle_Event()
     {
+        if(_event_callback) _event_callback(); // todo
         if((_revents & EPOLLIN) || (_revents & EPOLLRDHUP) || (_revents & EPOLLPRI))
         {
             if(_read_callback) _read_callback();
-            if(_event_callback) _event_callback(); // todo
         }
-        else if(_revents & EPOLLOUT)
+        
+        if(_revents & EPOLLOUT)
         {
             if(_write_callback) _write_callback();
-            if(_event_callback) _event_callback(); // todo
         }
         else if(_revents & EPOLLERR)
         {
@@ -80,8 +80,6 @@ public:
         {
             if(_close_callback) _close_callback();
         }
-
-        // if(_event_callback) _event_callback(); // todo
     }
 
     ~Channel()

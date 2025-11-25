@@ -1,3 +1,5 @@
+#pragma once
+
 #include"connection.hpp"
 
 #include"threadloop.hpp"
@@ -32,7 +34,7 @@ class Tcpserver
         if(it != _um.end()) _um.erase(it);
     }
 
-    void NewConnection(int fd)
+    void NewConnection_In_Loop(int fd)
     {
         INF_LOG("accept a link.");
     
@@ -43,10 +45,21 @@ class Tcpserver
         con->Set_Anyevent_Callback(_anyevent_callback);
         con->Set_Server_Closed_Callback(std::bind(&Tcpserver::Destory_Connection, this, std::placeholders::_1));
         con->Start_Inactive_Destruction(10);
-        con->Stablish();
+        con->Establish();
         _um.insert(make_pair(_con_id, con));
         ++_con_id;
     }
+
+    void NewConnection(int fd)
+    {
+        _mainloop.Runinloop(std::bind(&Tcpserver::NewConnection_In_Loop, this, fd));
+    }
+
+    void Add_Timeout_Task_In_Loop(int timeout, const TimerCallback& tc)
+    {
+        _mainloop.TimerAdd(_con_id++, timeout, tc);
+    }
+
 public:
     Tcpserver(const std::string& ip = default_ip, int16_t port = DEFAULT_PORT) :
         _ap(&_mainloop, ip, port),
@@ -82,6 +95,6 @@ public:
     // 添加定时任务
     void Add_Timeout_Task(int timeout, const TimerCallback& tc)
     {
-        
+        _mainloop.Runinloop(std::bind(&Tcpserver::Add_Timeout_Task_In_Loop, this, timeout, tc));
     }
 };

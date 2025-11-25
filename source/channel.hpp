@@ -62,9 +62,10 @@ public:
 
     void Handle_Event()
     {
-        if(_event_callback) _event_callback(); // todo
         if((_revents & EPOLLIN) || (_revents & EPOLLRDHUP) || (_revents & EPOLLPRI))
         {
+            std::cout << "handle read." << std::endl;
+            std::cout << "this: " << this << std::endl;
             if(_read_callback) _read_callback();
         }
         
@@ -80,6 +81,8 @@ public:
         {
             if(_close_callback) _close_callback();
         }
+
+        if(_event_callback) std::cout << "this: " << this << std::endl, _event_callback(); // todo
     }
 
     ~Channel()

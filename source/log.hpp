@@ -12,7 +12,7 @@
     struct tm* ltm = localtime(&t);\
     char time_arr[32] = {0};\
     strftime(time_arr, 31, "%F %T", ltm);\
-    fprintf(stdout, "[%s %s:%d]" format "\n", time_arr, __FILE__, __LINE__, ##__VA_ARGS__);\
+    fprintf(stdout, "[%lu %s %s:%d]" format "\n", (unsigned long)pthread_self(), time_arr, __FILE__, __LINE__, ##__VA_ARGS__);\
     }while(0)
 
 #define INF_LOG(format, ...) LOG(INF, format, ##__VA_ARGS__)

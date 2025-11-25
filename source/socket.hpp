@@ -159,10 +159,15 @@ public:
         return Recv(buf, len, MSG_DONTWAIT);
     }
 
+    void Close()
+    {
+        close(_skfd);
+    }
+
     // 关闭套接字
     ~Socket()
     {
-        close(_skfd);
+        Close();
         INF_LOG("socketfd close.");
     }
 

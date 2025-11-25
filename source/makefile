@@ -1,8 +1,5 @@
 .PHONY : ALL
-ALL : main client test
-
-test : test.cpp
-	g++ -o $@ $^ -std=c++11 -g -pthread
+ALL : main client
 
 main : main.cpp
 	g++ -o $@ $^ -std=c++11 -g -pthread

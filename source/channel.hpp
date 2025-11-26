@@ -6,12 +6,14 @@
 
 #include <sys/epoll.h>
 
+#include"log.hpp"
+
 class Eventloop;
 
 class Channel
 {
     int _fd;
-    uint32_t _events; // 监控的事件
+    uint32_t _events; // 监控的事件 // 一定要初始化!!!血的教训!!!
     uint32_t _revents; // 当前触发的事件
     Eventloop* _el;
     using Event_Callback = std::function<void()>;
@@ -21,12 +23,12 @@ class Channel
     Event_Callback _close_callback;
     Event_Callback _event_callback;
 public:
-    Channel(int fd, Eventloop* el) : _fd(fd), _el(el)
+    Channel(int fd, Eventloop* el) : _fd(fd), _el(el), _events(0), _revents(0)
     {}
 
     int FD() { return _fd; }
 
-    uint32_t EVENTS() { return _events; }
+    uint32_t EVENTS() { ; return _events; }
 
     void Set_Read_Callback(const Event_Callback& cb) { _read_callback = cb; }
 
@@ -64,8 +66,6 @@ public:
     {
         if((_revents & EPOLLIN) || (_revents & EPOLLRDHUP) || (_revents & EPOLLPRI))
         {
-            std::cout << "handle read." << std::endl;
-            std::cout << "this: " << this << std::endl;
             if(_read_callback) _read_callback();
         }
         
@@ -82,11 +82,6 @@ public:
             if(_close_callback) _close_callback();
         }
 
-        if(_event_callback) std::cout << "this: " << this << std::endl, _event_callback(); // todo
-    }
-
-    ~Channel()
-    {
-        close(_fd);
+        if(_event_callback) _event_callback(); // todo
     }
 };

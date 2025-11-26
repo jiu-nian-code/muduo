@@ -22,6 +22,8 @@
 
 #include"timewheel.hpp"
 
+#include"log.hpp"
+
 class TimerWheel;
 
 class Eventloop
@@ -133,7 +135,7 @@ public:
     }
 
     void EL_Update(Channel *cl)
-    {
+    { 
         return _pl.Add_Modify_Event(cl);
     }
 
@@ -153,7 +155,7 @@ public:
     }
 
     bool HasTimer(uint64_t timer_no)
-    {
+    { 
         return _tw.HasTimer(timer_no);
     }
 };

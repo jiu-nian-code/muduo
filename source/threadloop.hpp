@@ -49,9 +49,9 @@ class ThreadloopPool
     std::vector<Eventloop*> _loop_arr;
     int _next = 0;
 public:
-    ThreadloopPool(Eventloop* ml) : _mainloop(ml) {}
+    ThreadloopPool(Eventloop* ml) : _mainloop(ml) {  }
 
-    void Set_Thread_Num(int num) { _thread_num = num; }
+    void Set_Thread_Num(int num) {  _thread_num = num; }
 
     void Init()
     {

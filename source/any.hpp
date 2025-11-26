@@ -1,3 +1,5 @@
+#pragma once
+
 #include<iostream>
 
 #include<string>
@@ -75,15 +77,3 @@ public:
 
     ~Any() { delete _ph; }
 };
-
-// int main()
-// {
-//     // Any a(1);
-//     // Any b(2);
-//     // a = b;
-
-//     std::any a;
-//     a = std::string("hello world");
-//     std::cout << std::any_cast<std::string>(a) << std::endl;
-//     return 0;
-// }

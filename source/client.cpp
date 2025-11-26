@@ -3,7 +3,7 @@
 int main()
 {
     Socket sk;
-    sk.create_client_link("127.0.0.1", 9091);
+    sk.create_client_link(9091, "127.0.0.1");
     sk.reuse_address_port();
     char buf[1024] = {0};
     while(1)
@@ -11,8 +11,12 @@ int main()
         std::string str;
         getline(std::cin, str);
         if(str == "quit") break;
-        sk.Send((void*)str.c_str(), str.size());
-        ssize_t ret = sk.Recv(buf, 1024);
+        ssize_t ret = sk.Send((void*)str.c_str(), str.size());
+        std::cout << "Send " << ret << std::endl;
+        if(ret < 0) { std::cout << "send error, over." << std::endl; break; }
+        ret = sk.Recv(buf, 1024);
+        std::cout << "Recv " << ret << std::endl;
+        if(ret < 0) { std::cout << "link is over, quit." << std::endl; break; }
         buf[ret] = 0;
         std::cout << buf << std::endl;
     }

@@ -38,14 +38,15 @@ public:
         _isconcel(false)
     {}
 
-    void Set_Release(const ReleaseCallback& rc) { _release_callback = rc; }
+    void Set_Release(const ReleaseCallback& rc) {  _release_callback = rc; }
 
-    int Get_Timeout() { return _timeout; }
+    int Get_Timeout() {  return _timeout; }
 
-    void Cancel() { _isconcel = true; }
+    void Cancel() {  _isconcel = true; }
 
     ~Timer()
     {
+         
         if(_release_callback) _release_callback(); 
         // 一定要先进行relase，将任务记录消除，因为已经进入析构中途，此时认为任务已经没有了，智能指针已经销毁，
         // 如果任务callback中再次对任务记录进行访问，可能会访问一个正在析构的对象，会产生未定义行为
@@ -75,12 +76,14 @@ class TimerWheel
 
     void Remove_Timer(uint64_t timer_no) // 移除任务记录
     {
+         
         auto pos = _timer_um.find(timer_no);
         if(pos != _timer_um.end()){ _timer_um.erase(pos); }
     }
 
     int Create_Timerfd(int timeout)
     {
+         
         int timerfd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
         // int timerfd_settime(int fd, int flags, const struct itimerspec *new_value, struct itimerspec *old_value);
         if(timerfd < 0)
@@ -100,6 +103,7 @@ class TimerWheel
 
     void Read_Timerfd()
     {
+         
         uint64_t tmp = 0;
         ssize_t ret = read(_timerfd, &tmp, sizeof(tmp));
         if(ret < 0)
@@ -112,6 +116,7 @@ class TimerWheel
 
     void AddTimerInLoop(uint64_t timer_no, int timeout, TimerCallback tc)
     {
+         
         if(timeout == 0)
         {
             tc();
@@ -133,6 +138,7 @@ class TimerWheel
 
     void RefreshTimerInLoop(uint64_t timer_no)
     {
+         
         auto pos = _timer_um.find(timer_no);
         if(pos == _timer_um.end()){ return; } // 没找到要刷新的事件
 
@@ -142,6 +148,7 @@ class TimerWheel
 
     void CancelTimerInLoop(uint64_t timer_no)
     {
+         
         auto pos = _timer_um.find(timer_no);
         if(pos == _timer_um.end())
         {
@@ -160,6 +167,7 @@ public:
         _timerfd(Create_Timerfd(timeout)),
         _timerfd_cl(new Channel(_timerfd, _el))
     {
+         
         _timerfd_cl->Set_Read_Callback(std::bind(&TimerWheel::Read_Timerfd, this));
         _timerfd_cl->Set_Read_Able();
     }
@@ -172,6 +180,7 @@ public:
 
     void run_ontime_task()
     {
+         
         _tick = (_tick + 1) % _capcity; // 取模
         _timer_arr[_tick].clear(); // 指针走到哪清空哪的数组
     }
@@ -179,6 +188,7 @@ public:
     // !!!线程不安全
     bool HasTimer(uint64_t timer_no)
     {
+         
         auto it = _timer_um.find(timer_no);
         if(it != _timer_um.end()) return true;
         else return false;

@@ -18,6 +18,8 @@
 
 #include"tcpserver.hpp"
 
+#include"echoserver.hpp"
+
 #include<iostream>
 
 #include<time.h>
@@ -31,28 +33,28 @@
 // std::unordered_map<uint64_t, connect_ptr> um;
 // ThreadloopPool* tlp;
 
-void Connect(const connect_ptr& con_ptr)
-{
-    std::cout << "get a new link" << std::endl;
-}
+// void Connect(const connect_ptr& con_ptr)
+// {
+//     std::cout << "get a new link" << std::endl;
+// }
 
-void Message(const connect_ptr& con_ptr, Buffer* bf)
-{
-    char tmpbuf[65536];
-    ssize_t ret = bf->read(tmpbuf, 65535);
-    std::cout << tmpbuf << std::endl;
-    con_ptr->Send(tmpbuf, ret);
-}
+// void Message(const connect_ptr& con_ptr, Buffer* bf)
+// {
+//     char tmpbuf[65536];
+//     ssize_t ret = bf->read(tmpbuf, 65535);
+//     std::cout << tmpbuf << std::endl;
+//     con_ptr->Send(tmpbuf, ret);
+// }
 
-void Close(const connect_ptr& con_ptr)
-{
-    std::cout << "close" << std::endl;
-}
+// void Close(const connect_ptr& con_ptr)
+// {
+//     std::cout << "close" << std::endl;
+// }
 
-void Event(const connect_ptr& con_ptr)
-{
-    std::cout << "event" << std::endl;
-}
+// void Event(const connect_ptr& con_ptr)
+// {
+//     std::cout << "event" << std::endl;
+// }
 
 // uint64_t timer_no = 0;
 
@@ -62,11 +64,11 @@ void Event(const connect_ptr& con_ptr)
 
 //     connect_ptr con(new Connection(timer_no, fd, tlp->NextLoop()));
 //     con->Set_Connected_Callback(Connect);
-//     con->Set_Message_Callback(message);
+//     con->Set_Message_Callback(Message);
 //     con->Set_Closed_Callback(Close);
 //     con->Set_Anyevent_Callback(Event);
 //     con->Start_Inactive_Destruction(10);
-//     con->Stablish();
+//     con->Establish();
 //     um.insert(make_pair(timer_no, con));
 //     ++timer_no;
 // }
@@ -87,14 +89,21 @@ void Event(const connect_ptr& con_ptr)
 //     return 0;
 // }
 
+// int main()
+// {
+//     Tcpserver ts;
+//     ts.Set_Connected_Callback(Connect);
+//     ts.Set_Message_Callback(Message);
+//     ts.Set_Closed_Callback(Close);
+//     ts.Set_Anyevent_Callback(Event);
+//     ts.Set_Threadloop_Num(0);
+//     ts.Start_Inactive_Destruction(10);
+//     ts.Start();
+// }
+
 int main()
 {
-    Tcpserver ts;
-    ts.Set_Connected_Callback(Connect);
-    ts.Set_Message_Callback(Message);
-    ts.Set_Closed_Callback(Close);
-    ts.Set_Anyevent_Callback(Event);
-    ts.Set_Threadloop_Num(10);
-    ts.Start_Inactive_Destruction(3);
-    ts.Start();
+    Echo_server ec;
+    ec.start();
+    return 0;
 }

@@ -60,7 +60,7 @@ class Connection : public std::enable_shared_from_this<Connection>
     closed_callback _server_closed_callback;
 
     void Handle_Read()
-    {
+    {  
         char tmp[65536] = {0};
         ssize_t ret = _sk.Recv_NoBlock(tmp, 65535);
         if(ret < 0)
@@ -103,7 +103,7 @@ class Connection : public std::enable_shared_from_this<Connection>
     }
 
     void Handle_Error()
-    {
+    { 
         return Handle_Close();
     }
 
@@ -128,9 +128,8 @@ class Connection : public std::enable_shared_from_this<Connection>
     void Release_In_Loop()
     {
         _cs = CANCELCONNECTED;
-            
+        _cl.Remove(); // 先remove再close, 顺序要对
         _sk.Close();
-        _cl.Remove();
         if(_el->HasTimer(_con_id)) Cancel_Inactive_Destruction_In_Loop();
         if(_closed_callback) _closed_callback(shared_from_this());
         if(_server_closed_callback) _server_closed_callback(shared_from_this());
@@ -218,10 +217,10 @@ public:
 
     void Set_Anyevent_Callback(const anyevent_callback& cb) { _anyevent_callback = cb; }
 
-    void Set_Server_Closed_Callback(const closed_callback& cb) {_server_closed_callback = cb; }
+    void Set_Server_Closed_Callback(const closed_callback& cb) { _server_closed_callback = cb; }
 
     void Establish()
-    {
+    { 
         _el->Runinloop(std::bind(&Connection::Establish_In_Loop, this));
     }
 

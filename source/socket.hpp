@@ -50,12 +50,12 @@ public:
             ERR_LOG("socket: %s", strerror(errno));
             return false;
         }
-        INF_LOG("socketfd create successful.");
+        DBG_LOG("socketfd create successful.");
         return true;
     }
 
     // 绑定IP端口
-    bool my_bind(const std::string& ip = default_ip, int16_t port = DEFAULT_PORT)
+    bool my_bind(uint16_t port = DEFAULT_PORT, const std::string& ip = default_ip)
     {
         struct sockaddr_in in;
         memset((void*)&in, 0, sizeof(in));
@@ -70,7 +70,7 @@ public:
             ERR_LOG("bind: %s", strerror(errno));
             return false;
         }
-        INF_LOG("socketfd bind successful.");
+        DBG_LOG("socketfd bind successful.");
         return true;
     }
 
@@ -83,12 +83,12 @@ public:
             ERR_LOG("listen: %s", strerror(errno));
             return false;
         }
-        INF_LOG("socketfd start listen.");
+        DBG_LOG("socketfd start listen.");
         return true;
     }
 
     // 向服务器发起连接
-    bool my_connect(const std::string& ip, int16_t port)
+    bool my_connect(uint16_t port, const std::string& ip)
     {
         struct sockaddr_in in;
         in.sin_family = AF_INET;
@@ -100,7 +100,7 @@ public:
             ERR_LOG("connect: %s", strerror(errno));
             return false;
         }
-        INF_LOG("socketfd connect successful.");
+        DBG_LOG("socketfd connect successful.");
         return true;
     }
 
@@ -114,7 +114,7 @@ public:
             ERR_LOG("accept: %s", strerror(errno));
             return -1;
         }
-        INF_LOG("listenfd accept a new socketfd.");
+        DBG_LOG("listenfd accept a new socketfd.");
         return ac_fd;
     }
 
@@ -123,14 +123,14 @@ public:
     {
         // ssize_t send(int sockfd, const void *buf, size_t len, int flags);
         ssize_t ret = send(_skfd, buf, len, flags);
-        if(ret < 0)
+        if(ret < 0) // send无法判断对端是否关闭，ret == 0只能说明发送了0个字节
         {
             // EINTR 表示当前的socket的阻塞等待被信号打断了
-            // EAGAIN 表示当前socket的接收缓冲区没有数据了，非阻塞返回会有这个情况
+            // EAGAIN TCP发送缓冲区已满，无法立即容纳更多数据, 非阻塞返回会有这个情况
             if(errno == EINTR || errno == EAGAIN) return 0;
             ERR_LOG("send: %s", strerror(errno));
         }
-        INF_LOG("send successful.");
+        DBG_LOG("send successful.");
         return ret;
     }
 
@@ -144,13 +144,15 @@ public:
     {
         // ssize_t recv(int sockfd, void *buf, size_t len, int flags);
         ssize_t ret = recv(_skfd, buf, len, 0);
-        if(ret <= 0)
+        if(ret <= 0) // ret == 0 表示对端已经关闭，通过recv能判断对端关闭，将这种情况和其他重大错误一起判定为需要关闭连接的情况
         {
+            // std::cout << errno << std::endl;
+            // EAGAIN 表示当前socket的接收缓冲区没有数据了，非阻塞返回会有这个情况，但是ret仍然为负数，不会和连接关闭的返回值冲突
             if(errno == EINTR || errno == EAGAIN) return 0;
             ERR_LOG("recv: %s", strerror(errno));
             return -1;
         }
-        INF_LOG("recv successful.");
+        DBG_LOG("recv successful.");
         return ret;
     }
 
@@ -167,8 +169,8 @@ public:
     // 关闭套接字
     ~Socket()
     {
-        Close();
-        INF_LOG("socketfd close.");
+        // Close();
+        DBG_LOG("socketfd close.");
     }
 
     // 开启地址端口复用
@@ -180,13 +182,13 @@ public:
             ERR_LOG("setsockopt: %s", strerror(errno));
             return false;
         }
-        INF_LOG("reuse address and port successful.");
+        DBG_LOG("reuse address and port successful.");
         return true;
     }
 
     // 开启非阻塞
     bool enable_NONBLOCK()
-    {
+    { 
         // int fcntl(int fd, int cmd, ... /* arg */ );
         int fl = fcntl(_skfd, F_GETFL);
         if(fl < 0)
@@ -199,23 +201,25 @@ public:
             ERR_LOG("fcntl: F_SETFL: %s", strerror(errno));
             return false;
         }
-        INF_LOG("enable socketfd nonblock successful.");
+        DBG_LOG("enable socketfd nonblock successful.");
         return true;
     }
 
     // 创建一个监听连接
-    bool create_listen_link(const std::string& ip = default_ip, int16_t port = DEFAULT_PORT)
+    bool create_listen_link(uint16_t port = DEFAULT_PORT, const std::string& ip = default_ip)
     {
         my_socket();
-        my_bind(ip, port);
+        enable_NONBLOCK();
+        reuse_address_port();
+        my_bind(port, ip);
         my_listen();
         return true;
     }
     
-    // 创建一个服务端连接
-    bool create_client_link(const std::string& ip, int16_t port)
+    // 创建一个客户端端连接
+    bool create_client_link(uint16_t port, const std::string& ip)
     {
-        return my_socket() && my_connect(ip, port);
+        return my_socket() && my_connect(port, ip);
     }
 
     int FD() { return _skfd; }

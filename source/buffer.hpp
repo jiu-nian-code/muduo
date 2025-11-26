@@ -48,7 +48,6 @@ class Buffer
 
     bool expansion(size_t sz)
     {
-        // std::cout << 1 << std::endl;
         size_t old_sz = _arr.size();
         size_t new_sz = old_sz;
         size_t era = effective_read_area();
@@ -56,10 +55,6 @@ class Buffer
         {
             new_sz *= 2;
         }
-        // std::cout <<  old_sz << std::endl;
-        // std::cout <<  sz << std::endl;
-        // std::cout <<  era << std::endl;
-        // std::cout <<  new_sz << std::endl;
         std::vector<char> tmp(new_sz);
         int source = _read_loc;
         int destination = 0;
@@ -218,31 +213,3 @@ public:
         std::cout << std::endl << "_read_loc: " << _read_loc << " " << "_write_loc: " << _write_loc << std::endl;
     }
 };
-
-// int main()
-// {
-//     buffer buf;
-//     std::string str("hello world");
-//     buf.wirte(str.c_str(), str.size());
-//     buf.wirte(str.c_str(), str.size());
-//     buf.wirte(str.c_str(), str.size());
-//     buf.wirte(str.c_str(), str.size());
-//     buf.wirte(str.c_str(), str.size());
-//     buf.wirte(str.c_str(), str.size());
-
-//     char arry[1024] = {0};
-//     buf.read(arry, 1024);
-
-//     std::string str1("hello linux");
-//     buf.wirte(str1.c_str(), str.size());
-//     buf.wirte(str1.c_str(), str.size());
-//     // buf.wirte(str1.c_str(), str.size());
-//     // buf.wirte(str1.c_str(), str.size());
-//     // buf.wirte(str1.c_str(), str.size());
-//     // buf.wirte(str1.c_str(), str.size());
-//     buf.PRINT ();
-
-//     std::cout << "------------------------------------------" << std::endl;
-//     std::cout << arry << std::endl;
-//     return 0;
-// }

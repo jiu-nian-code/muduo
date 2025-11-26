@@ -28,8 +28,9 @@ class Poller
         struct epoll_event ee;
         ee.events = cl->EVENTS();
         ee.data.fd = fd;
-        if(epoll_ctl(_epfd, op, fd, &ee))
+        if(epoll_ctl(_epfd, op, fd, &ee) < 0)
         {
+            // std::cout << "出错了: " << _epfd << " " << op << " " << fd << " " << ee.data.fd << std::endl;
             ERR_LOG("epoll_ctl: %s", strerror(errno));
         }
     }
@@ -62,7 +63,6 @@ public:
         auto it = _mp.find(fd);
         if(it != _mp.end())
         {
-            // delete it->second; // 不应该由poller管理Channel的生命周期
             _mp.erase(it);
             Update(cl, EPOLL_CTL_DEL);
         }
@@ -88,19 +88,6 @@ public:
 
     ~Poller()
     {
-        for(auto& e : _mp)
-            delete e.second;
+        std::cout << "poller distory" << std::endl;
     }
 };
-
-// //移除监控
-// void Channel::Remove()
-// {
-//     return _pl->Del_Event(this);
-// }
-
-// //事件处理，一旦连接触发了事件，就调用这个函数，自己触发了什么事件如何处理自己决定
-// void Channel::Update()
-// {
-//     return _pl->Add_Modify_Event(this);
-// }

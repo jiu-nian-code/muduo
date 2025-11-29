@@ -46,7 +46,7 @@ class Buffer
         return true;
     }
 
-    bool expansion(size_t sz)
+    void expansion(size_t sz)
     {
         size_t old_sz = _arr.size();
         size_t new_sz = old_sz;
@@ -66,7 +66,7 @@ class Buffer
         _read_loc = 0;
         _write_loc = destination;
 
-        return true;
+        return;
     }
 
     size_t Head()
@@ -124,6 +124,11 @@ public:
         _write_loc(0)
     {}
 
+    void resize(size_t sz)
+    {
+        expansion(sz);
+    }
+
     size_t effective_write_area()
     {
         return Head() + Tail();
@@ -178,11 +183,21 @@ public:
 
     void Move_Read_Loc(size_t len) // danger
     {
-        if(len < effective_read_area())
+        if(len > effective_read_area())
         {
             ERR_LOG("move error, len is longer than effective_read_area");
         }
         _read_loc += len;
+    }
+
+    void Move_Write_Loc(size_t len) // danger, make sure buffer can directly write.
+    {
+        if(len > effective_write_area())
+        {
+            ERR_LOG("move error, len is longer than effective_write_area");
+        }
+        _write_loc += len;
+        //_write_loc %= _arr.size(); // 其实可以不用加
     }
 
 
@@ -210,6 +225,7 @@ public:
         {
             std::cout << _arr[cur++];
         }
+
         std::cout << std::endl << "_read_loc: " << _read_loc << " " << "_write_loc: " << _write_loc << std::endl;
     }
 };

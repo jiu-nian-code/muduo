@@ -1,8 +1,10 @@
 #include"util.hpp"
 
-#include"http_requst.hpp"
+#include"http_request.hpp"
 
 #include"http_response.hpp"
+
+#include"http_context.hpp"
 
 void test_str_split()
 {

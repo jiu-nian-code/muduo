@@ -19,7 +19,7 @@ int main()
 
     for(auto& s : matchs)
     {
-        std::cout << s << std::endl;
+        std::cout << 1 << s << std::endl;
     }
     return 0;
 }

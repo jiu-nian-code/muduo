@@ -1,3 +1,5 @@
+#pragma once
+
 #include"../tcpserver.hpp"
 
 #include<fstream>

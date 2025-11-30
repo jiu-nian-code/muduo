@@ -1,10 +1,12 @@
+#pragma once
+
 #include"../tcpserver.hpp"
 
 #include<regex>
 
 std::string default_version = "HTTP/1.1";
 
-class HttpRequest
+struct HttpRequest
 {
     std::string _method; // 请求方法
     std::string _path; // 请求路径
@@ -13,8 +15,6 @@ class HttpRequest
     std::smatch _matches; // 正则表达式的提取数据
     std::unordered_map<std::string, std::string> _headers; // 请求字段
     std::unordered_map<std::string, std::string> _params; // 查询字符串
-public:
-    HttpRequest(const std::string& version = default_version) : _version(version) {}
 
     void reset()
     {
@@ -62,7 +62,7 @@ public:
     }
 
     // 插入查询字符串
-    bool set__param(const std::string& key, const std::string& value)
+    bool set_param(const std::string& key, const std::string& value)
     {
         auto it = _params.find(key);
         if(it != _params.end())
@@ -75,7 +75,7 @@ public:
     }
 
     // 是否有查询字符串
-    bool has__param(const std::string& key)
+    bool has_param(const std::string& key)
     {
         auto it = _params.find(key);
         if(it == _params.end()) return false;
@@ -83,7 +83,7 @@ public:
     }
 
     // 获取头部字符串
-    std::string get__param(const std::string& key)
+    std::string get_param(const std::string& key)
     {
         auto it = _params.find(key);
         if(it == _params.end())

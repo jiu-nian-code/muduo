@@ -201,10 +201,11 @@ public:
     }
 
 
-    ssize_t GetLine(char* destination)
+    std::string GetLine()
     {
         char* res = FindCRLF();
-        return read(destination, res - read_position() + 1);
+        if(res == nullptr) return std::string();
+        return read_as_string(res - read_position() + 1);
     }
 
     size_t Size()

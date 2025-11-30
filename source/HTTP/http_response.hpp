@@ -1,6 +1,8 @@
+#pragma once
+
 #include"../tcpserver.hpp"
 
-class HttpResponse
+struct HttpResponse
 {
     int _status;
     std::string _version;
@@ -8,7 +10,7 @@ class HttpResponse
     bool _is_redirect;
     std::string _redirect_url;
     std::unordered_map<std::string, std::string> _headers;
-public:
+
     HttpResponse() : _status(200), _is_redirect(false) {}
     // 重置
     void reset()

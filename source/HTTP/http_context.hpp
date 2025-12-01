@@ -55,7 +55,7 @@ class HttpContext
 
     bool Pars_line(const std::string& line)
     {
-        std::regex e("(GET|POST|PUT|HEAD|DELETE|OPTIONS|TRACE|CONNECT|LINK|UNLINK) ([^?]*)(?:\\?(.*))? (HTTP/1\\.[01])(?:\n|\r\n)?");
+        std::regex e("(GET|POST|PUT|HEAD|DELETE|OPTIONS|TRACE|CONNECT|LINK|UNLINK) ([^?]*)(?:\\?(.*))? (HTTP/1\\.[01])(?:\n|\r\n)?", std::regex::icase); // std::regex::icase不区分大小写
         std::smatch matchs;
         bool ret = std::regex_match(line, matchs, e);
         if(!ret)

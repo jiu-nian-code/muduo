@@ -50,7 +50,7 @@ class Tcpserver
         con->Set_Connected_Callback(_connected_callback);
         con->Set_Message_Callback(_message_callback);
         con->Set_Closed_Callback(_closed_callback);
-        con->Set_Anyevent_Callback(_anyevent_callback);
+        // con->Set_Anyevent_Callback(_anyevent_callback);
         con->Set_Server_Closed_Callback(std::bind(&Tcpserver::Destory_Connection, this, std::placeholders::_1));
         if(_enable_inactive_destruction)
         {
@@ -93,7 +93,7 @@ public:
 
     void Set_Closed_Callback(const closed_callback& cb) {  _closed_callback = cb; }
 
-    void Set_Anyevent_Callback(const anyevent_callback& cb) {  _anyevent_callback = cb; }
+    // void Set_Anyevent_Callback(const anyevent_callback& cb) {  _anyevent_callback = cb; }
     // 设置非活跃链接销毁
     void Start_Inactive_Destruction(int timeout) {  _enable_inactive_destruction = true; _timeout = timeout; }
     // 启动线程池

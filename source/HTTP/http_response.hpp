@@ -2,6 +2,8 @@
 
 #include"../tcpserver.hpp"
 
+std::string deafult_version("HTTP/1.1");
+
 struct HttpResponse
 {
     int _status;
@@ -11,7 +13,8 @@ struct HttpResponse
     std::string _redirect_url;
     std::unordered_map<std::string, std::string> _headers;
 
-    HttpResponse() : _status(200), _is_redirect(false) {}
+    HttpResponse() : _status(200), _is_redirect(false), _version(deafult_version) {}
+    HttpResponse(int status) : _status(status), _is_redirect(false) {}
     // 重置
     void reset()
     {
@@ -69,6 +72,11 @@ struct HttpResponse
     {
         set_header("Content-Type", content_type);
         _body = body;
+    }
+
+    void set_version(const std::string& version)
+    {
+        _version = version;
     }
 
     // 是否是短连接

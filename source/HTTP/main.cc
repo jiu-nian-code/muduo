@@ -6,6 +6,8 @@
 
 #include"http_context.hpp"
 
+#include"http_server.hpp"
+
 void test_str_split()
 {
     std::string str = "thxc++13355553430c++0210c++c++c++0721";
@@ -75,6 +77,21 @@ void test_is_valid_path()
     std::cout << Util::is_valid_path("./..") << std::endl;
 }
 
+void get_func(HttpRequest& req, HttpResponse& resp)
+{
+
+}
+
+void test_HttpServer()
+{
+    HttpServer hs;
+    hs.set_root_dir("./WWWROOT");
+    hs.set_thread_num(0);
+    hs.set_timeout(10);
+    // hs.Get();
+    hs.Start();
+}
+
 int main()
 {
     // test_str_split();
@@ -86,6 +103,7 @@ int main()
     // test_get_file_mime();
     // test_is_directory();
     // test_is_regular();
-    test_is_valid_path();
+    // test_is_valid_path();
+    test_HttpServer();
     return 0;
 }

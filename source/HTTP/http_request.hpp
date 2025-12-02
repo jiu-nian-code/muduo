@@ -16,6 +16,24 @@ struct HttpRequest
     std::unordered_map<std::string, std::string> _headers; // 请求字段
     std::unordered_map<std::string, std::string> _params; // 查询字符串
 
+    void PRINT() // for debug
+    {
+        std::cout << "HttpRequest: **********************" << std::endl;
+        std::cout << "_method: " << _method << std::endl;
+        std::cout << "_path: " << _path << std::endl;
+        std::cout << "_version: " << _version << std::endl;
+        std::cout << "_body: " << _body << std::endl;
+        for(auto& e : _headers)
+        {
+            std::cout << e.first << ": " << e.second << std::endl;
+        }
+
+        for(auto& e : _params)
+        {
+            std::cout << e.first << ": " << e.second << std::endl;
+        }
+    }
+
     void reset()
     {
         _method.clear();

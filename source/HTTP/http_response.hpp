@@ -15,6 +15,21 @@ struct HttpResponse
 
     HttpResponse() : _status(200), _is_redirect(false), _version(deafult_version) {}
     HttpResponse(int status) : _status(status), _is_redirect(false) {}
+
+    void PRINT() // for debug
+    {
+        std::cout << "HttpResponse: **********************" << std::endl;
+        std::cout << "_status: " << _status << std::endl;
+        std::cout << "_version: " << _version << std::endl;
+        std::cout << "_body: " << _body << std::endl;
+        std::cout << "_is_redirect: " << _is_redirect << std::endl;
+        std::cout << "_redirect_url: " << _redirect_url << std::endl;
+        for(auto& e : _headers)
+        {
+            std::cout << e.first << ": " << e.second << std::endl;
+        }
+    }
+
     // 重置
     void reset()
     {

@@ -49,7 +49,7 @@ class HttpContext
 
         bool ret = Pars_line(line);
         if(!ret) return false;
-        _resp_statu = RECV_HTTP_HEAD;
+        _recv_stu = RECV_HTTP_HEAD;
         return true;
     }
 
@@ -64,6 +64,10 @@ class HttpContext
             _recv_stu = RECV_HTTP_ERROR;
             return false;
         }
+        // for(auto& e : matchs)
+        // {
+        //     std::cout << e << std::endl;
+        // }
 
         _request._method = matchs[1]; // 不需要解码, 浏览器加的
         std::transform(_request._method.begin(), _request._method.end(), _request._method.begin(), ::toupper);
@@ -112,7 +116,7 @@ class HttpContext
                 _recv_stu = RECV_HTTP_ERROR;
                 return false;
             }
-            Pars_header(line);
+            if(!Pars_header(line)) return false;
         }
         _recv_stu = RECV_HTTP_BODY;
         return true;
@@ -123,7 +127,7 @@ class HttpContext
         int gap = 1;
         if(line.back() == '\n') line.pop_back();
         if(line.back() == '\r') ++gap, line.pop_back();
-        size_t pos = line.find("= ");
+        size_t pos = line.find(": ");
         if(pos == std::string::npos)
         {
             _resp_statu = 400;
@@ -137,12 +141,12 @@ class HttpContext
     bool recv_body(Buffer& buf)
     {
         if(_recv_stu != RECV_HTTP_BODY) return false;
-        if(_request.content_length() == 0) return true; // 正文长度为0, 直接返回
+        if(_request.content_length() == 0) { _recv_stu = RECV_HTTP_OVER; return true; } // 正文长度为0, 直接返回
         size_t len = _request.content_length() - _request._body.size();
         if(buf.effective_read_area() >= len) // 缓冲区数据够
         {
             _request._body += buf.read_as_string(len);
-            _resp_statu = RECV_HTTP_OVER;
+            _recv_stu = RECV_HTTP_OVER;
             return true;
         }
         _request._body += buf.read_as_string(buf.effective_read_area());

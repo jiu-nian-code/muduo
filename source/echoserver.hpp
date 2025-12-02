@@ -32,7 +32,7 @@ public:
         _server.Set_Message_Callback(std::bind(&Echo_server::Message, this, std::placeholders::_1, std::placeholders::_2));
         _server.Set_Closed_Callback(std::bind(&Echo_server::Close, this, std::placeholders::_1));
         // _server.Set_Anyevent_Callback(std::bind(&Echo_server::Event, this, std::placeholders::_1));
-        _server.Set_Threadloop_Num(2);
+        _server.Set_Threadloop_Num(0);
         _server.Start_Inactive_Destruction(5);
     }
 

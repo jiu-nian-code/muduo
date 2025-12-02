@@ -75,10 +75,12 @@ public:
         }
         else if(_revents & EPOLLERR)
         {
+            std::cout << 33 << std::endl;
             if(_error_callback) _error_callback();
         }
         else if(_revents & EPOLLHUP)
         {
+            std::cout << 22 << std::endl;
             if(_close_callback) _close_callback();
         }
 

@@ -49,6 +49,7 @@ class HttpServer
             reponse << e.first << ": " << e.second << "\r\n";
         reponse << "\r\n";
         reponse << resp._body;
+        // std::cout << reponse.str().c_str() << std::endl;
         con_ptr->Send(reponse.str().c_str(), reponse.str().size());
     }
 
@@ -89,7 +90,7 @@ class HttpServer
 
     bool route(HttpRequest& req, HttpResponse& resp)
     {
-        if(is_headler_file(req)) headler_file(req, resp);
+        if(is_headler_file(req)) { headler_file(req, resp); return true; }
 
         if(req._method == "GET" || req._method == "HEAD") return dispatcher(_get_route, req, resp);
         else if(req._method == "POST") return dispatcher(_post_route, req, resp);
@@ -108,25 +109,45 @@ class HttpServer
     {
         while(1)
         {
+            // buf->PRINT();
             HttpContext* context = (con_ptr->GetContext())->Get_Value<HttpContext>();
             context->RecvHttpRequest(*buf);
             HttpRequest req = context->Request();
+            // req.PRINT();
             HttpResponse resp(context->RespStatu());
             bool ret_route = true;
             if(context->RecvStatu() == RECV_HTTP_OVER) ret_route = route(req, resp);
+            // typedef enum
+            // {
+            //     RECV_HTTP_ERROR,
+            //     RECV_HTTP_LINE,
+            //     RECV_HTTP_HEAD,
+            //     RECV_HTTP_BODY,
+            //     RECV_HTTP_OVER
+            // } HttpRecvStatu;
+            // std::cout << (context->RecvStatu() == RECV_HTTP_ERROR) << std::endl;
+            // std::cout << (context->RecvStatu() == RECV_HTTP_LINE) << std::endl;
+            // std::cout << (context->RecvStatu() == RECV_HTTP_HEAD) << std::endl;
+            // std::cout << (context->RecvStatu() == RECV_HTTP_BODY) << std::endl;
+            // std::cout << (context->RecvStatu() == RECV_HTTP_OVER) << std::endl;
+
+            // std::cout << ret_route << std::endl;
+            // resp.PRINT();
             if(context->RecvStatu() == RECV_HTTP_ERROR || !ret_route) // context->RecvStatu() == RECV_HTTP_ERROR可以换context->RespStatu() >= 400
             {
+                // std::cout << 250 << std::endl;
                 headler_error(resp);
                 write_reponse(con_ptr, req, resp);
                 context->reset();
-                buf->Clear();
+                buf->Clear(); // 出错清空数据防止死循环
                 con_ptr->Shutdown();
                 return;
             }
-            if(context->RecvStatu() != RECV_HTTP_OVER) return;
+            if(context->RecvStatu() != RECV_HTTP_OVER) return; // 二次读没有数据会在此返回
             write_reponse(con_ptr, req, resp);
             context->reset();
-            if(req.is_short_connection()) break;
+            // std::cout << "----------------------------------------------------------" << std::endl;
+            if(req.is_short_connection()) return con_ptr->Shutdown();
         }
     }
 public:
@@ -139,7 +160,7 @@ public:
 
     void set_root_dir(const std::string& dir)
     {
-        if(Util::is_directory(dir))
+        if(!Util::is_directory(dir))
         {
             ERR_LOG("dir error.");
             return;

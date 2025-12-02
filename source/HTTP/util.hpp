@@ -135,9 +135,7 @@ public:
         for(int i = 0; i < sz; ++i)
         {
             char e = str[i];
-            if(is_reserved_characters(e))
-                ret += e;
-            else if(e == '+' && is_space_to_plus) ret += ' ';
+            if(e == '+' && is_space_to_plus) ret += ' ';
             else if(e == '%')
             {
                 char x = str[i + 1];
@@ -151,7 +149,9 @@ public:
                 char b = HEXtoCHAR(y);
                 ret += (a * 16 + b);
                 // ret += a << 4 + b;
+                i += 2;
             }
+            else ret += e;
         }
         return ret;
     }

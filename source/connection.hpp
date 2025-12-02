@@ -66,6 +66,7 @@ class Connection : public std::enable_shared_from_this<Connection>
         if(ret < 0)
         {
             // std::cout << strerror(errno) << std::endl;
+            std::cout << 1 << std::endl;
             return Shutdown_In_Loop();
         }
         _inbuf.wirte(tmp, ret);
@@ -83,6 +84,7 @@ class Connection : public std::enable_shared_from_this<Connection>
             {
                 _message_callback(shared_from_this(), &_inbuf);
             }
+            std::cout << 2 << std::endl;
             return Release();
         }
         _outbuf.Move_Read_Loc(ret);
@@ -90,7 +92,7 @@ class Connection : public std::enable_shared_from_this<Connection>
         if(_outbuf.effective_read_area() == 0)
         {
             _cl.Reset_Write_Able();
-            if(_cs == CANCELCONNECTING) return Release();
+            if(_cs == CANCELCONNECTING) {std::cout << 3 << std::endl; return Release();}
         }
         return;
     }
@@ -99,6 +101,7 @@ class Connection : public std::enable_shared_from_this<Connection>
     {
         if(_inbuf.effective_read_area() > 0) 
             _message_callback(shared_from_this(), &_inbuf);
+        std::cout << 4 << std::endl;
         return Release();
     }
 
@@ -127,6 +130,7 @@ class Connection : public std::enable_shared_from_this<Connection>
 
     void Release_In_Loop()
     {
+        std::cout << 8 << std::endl;
         _cs = CANCELCONNECTED;
         _cl.Remove(); // 先remove再close, 顺序要对
         _sk.Close();
@@ -148,6 +152,7 @@ class Connection : public std::enable_shared_from_this<Connection>
 
     void Shutdown_In_Loop()
     {
+        std::cout << 9 << std::endl;
         _cs = CANCELCONNECTING;
         if(_inbuf.effective_read_area() > 0 && _message_callback) 
             _message_callback(shared_from_this(), &_inbuf);
@@ -229,15 +234,17 @@ public:
         Buffer tmp;
         tmp.wirte(buf, sz);
         _el->Runinloop(std::bind(&Connection::Send_In_Loop, this, std::move(tmp)));
-    }   
+    }
 
     void Shutdown()
     {
+        std::cout << 99 << std::endl;
         _el->Runinloop(std::bind(&Connection::Shutdown_In_Loop, this));
     }
 
     void Release()
     {
+        std::cout << 88 << std::endl;
         _el->QueueInLoop(std::bind(&Connection::Release_In_Loop, this));
     }
 

@@ -82,13 +82,23 @@ void get_func(HttpRequest& req, HttpResponse& resp)
 
 }
 
+void test_HttpContext()
+{
+    HttpContext hc;
+    Buffer buf;
+    std::string str("GET / HTTP/1.1\r\n");
+    buf.write_string(str);
+    hc.RecvHttpRequest(buf);
+    HttpRequest req = hc.Request();
+    req.PRINT();
+}
+
 void test_HttpServer()
 {
     HttpServer hs;
     hs.set_root_dir("./WWWROOT");
-    hs.set_thread_num(0);
-    hs.set_timeout(10);
-    // hs.Get();
+    hs.set_thread_num(1);
+    hs.set_timeout(20);
     hs.Start();
 }
 
@@ -104,6 +114,7 @@ int main()
     // test_is_directory();
     // test_is_regular();
     // test_is_valid_path();
+    // test_HttpContext();
     test_HttpServer();
     return 0;
 }
